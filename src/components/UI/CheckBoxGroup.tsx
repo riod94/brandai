@@ -1,11 +1,11 @@
 import React from "react";
+import { Image } from "@heroui/image";
 import {
 	CheckboxGroup,
 	Checkbox,
 	CheckboxGroupProps,
 	CheckboxProps,
-	Image,
-} from "@heroui/react";
+} from "@heroui/checkbox";
 
 interface CustomCheckboxProps extends CheckboxProps {
 	label?: string;

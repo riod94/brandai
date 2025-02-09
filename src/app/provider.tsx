@@ -1,7 +1,7 @@
 "use client";
 import React from "react";
-import { HeroUIProvider } from "@heroui/react";
 import { ThemeProvider, ThemeProviderProps } from "next-themes";
+import { HeroUIProvider } from "@heroui/system";
 
 export interface ProvidersProps {
 	children: React.ReactNode;
