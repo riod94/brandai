@@ -10,7 +10,6 @@
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",
-    "@google/generative-ai": "^0.24.1",
     "@heroui/accordion": "^2.2.8",
     "@heroui/button": "^2.2.10",
     "@heroui/card": "^2.2.10",
@@ -26,6 +25,7 @@
     "@heroui/spinner": "^2.2.7",
     "@heroui/system": "^2.4.7",
     "@heroui/theme": "^2.4.6",
+    "@huggingface/inference": "^4.13.5",
     "clsx": "^2.1.1",
     "framer-motion": "^12.4.1",
     "lucide-react": "^0.474.0",
