@@ -2,6 +2,7 @@
 import React from "react";
 import { ThemeProvider, ThemeProviderProps } from "next-themes";
 import { HeroUIProvider } from "@heroui/system";
+import { SessionProvider } from "next-auth/react";
 
 export interface ProvidersProps {
 	children: React.ReactNode;
@@ -10,10 +11,12 @@ export interface ProvidersProps {
 
 export default function Provider({ children, themeProps }: ProvidersProps) {
 	return (
-		<HeroUIProvider>
-			<ThemeProvider {...themeProps}>
-				<main className="bg-white dark:bg-gray-900">{children}</main>
-			</ThemeProvider>
-		</HeroUIProvider>
+		<SessionProvider>
+			<HeroUIProvider>
+				<ThemeProvider {...themeProps}>
+					<main className="bg-white dark:bg-gray-900">{children}</main>
+				</ThemeProvider>
+			</HeroUIProvider>
+		</SessionProvider>
 	);
 }

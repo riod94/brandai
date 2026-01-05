@@ -30,7 +30,7 @@ function Features() {
 			<div className="container mx-auto px-6">
 				<div className="text-center mb-16">
 					<h2 className="text-3xl md:text-4xl font-bold mb-4 text-primary/80">
-						Why Choose BrandAI
+						Why Choose BerandAI
 					</h2>
 					<p className=" max-w-2xl mx-auto">
 						Create stunning logos effortlessly with our powerful features

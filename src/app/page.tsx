@@ -14,9 +14,9 @@ export default function Home() {
 			<Features />
 			<HowItWorks />
 			<Gallery />
-			{/* <Pricing />
+			<Pricing />
 			<Testimonials />
-			<Faq /> */}
+			<Faq />
 			<CTASection />
 		</div>
 	);

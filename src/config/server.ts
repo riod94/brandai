@@ -1,5 +1,18 @@
+const validateEnv = () => {
+    const required = ['HF_TOKEN'];
+    const missing = required.filter(key => !process.env[key]);
+
+    if (missing.length > 0) {
+        console.warn(`⚠️ Missing environment variables: ${missing.join(', ')}`);
+        console.warn('Logo generation may fall back to Pollinations.ai');
+    }
+};
+
+// Validate on module load
+validateEnv();
+
 export const serverConfig = {
-    hfToken: process.env.HF_TOKEN!,
+    hfToken: process.env.HF_TOKEN || '',
     hfApiUrl: process.env.HF_API_URL || "https://router.huggingface.co/models/black-forest-labs/FLUX.1-schnell",
     hfModel: process.env.HF_MODEL || "black-forest-labs/FLUX.1-schnell",
     pollinationsApiUrl: process.env.POLLINATIONS_API_URL || "https://image.pollinations.ai/prompt",

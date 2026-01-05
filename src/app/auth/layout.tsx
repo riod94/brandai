@@ -11,7 +11,7 @@ export default function AuthLayout({
 					<blockquote className="space-y-2">
 						<p className="text-md">
 							Create stunning logos in minutes with our AI-powered
-							BrandAI.
+							BerandAI.
 						</p>
 					</blockquote>
 				</div>

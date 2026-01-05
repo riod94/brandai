@@ -3,6 +3,7 @@ import "./globals.css";
 import Provider from "./provider";
 import Head from "./head";
 import Header from "@/components/Header";
+import Footer from "@/components/Footer";
 import { siteConfig } from "@/config/site";
 import { fontSans } from "@/config/fonts";
 import clsx from "clsx";
@@ -40,8 +41,11 @@ export default function RootLayout({
 				)}
 			>
 				<Provider themeProps={{ attribute: "class", defaultTheme: "dark" }}>
-					<Header />
-					{children}
+					<div className="flex flex-col min-h-screen">
+						<Header />
+						<main className="flex-1">{children}</main>
+						<Footer />
+					</div>
 				</Provider>
 			</body>
 		</html>
