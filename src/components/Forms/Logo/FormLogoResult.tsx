@@ -97,11 +97,17 @@ export const FormLogoResult = () => {
 			body: JSON.stringify(values),
 		}).then((res) => res.json());
 
-	const { data, error, isLoading, mutate } = useSWR(url, fetcher, {
-		revalidateOnFocus: false,
-		revalidateIfStale: false,
-		revalidateOnReconnect: false,
-	});
+	const { data, error, isLoading, isValidating, mutate } = useSWR(
+		url,
+		fetcher,
+		{
+			revalidateOnFocus: false,
+			revalidateIfStale: false,
+			revalidateOnReconnect: false,
+		}
+	);
+
+	const isGenerating = isLoading || isValidating;
 
 	return (
 		<Card
@@ -110,10 +116,10 @@ export const FormLogoResult = () => {
 			className="w-full max-w-3xl mx-auto bg-gray-50 dark:bg-gray-900"
 		>
 			<CardBody className="p-6">
-				{isLoading && <LoadingState />}
-				{error && <ErrorState onRetry={mutate} />}
-				{data?.imgSrc && !isLoading && !error && (
-					<SuccessState imgSrc={data.imgSrc} onRetry={mutate} />
+				{isGenerating && <LoadingState />}
+				{error && !isGenerating && <ErrorState onRetry={() => mutate()} />}
+				{data?.imgSrc && !isGenerating && !error && (
+					<SuccessState imgSrc={data.imgSrc} onRetry={() => mutate()} />
 				)}
 			</CardBody>
 		</Card>
