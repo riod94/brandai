@@ -5,9 +5,9 @@
 
 ## 1. Authentication & Authorization
 
--  [ ] **Weak Passwords**: Verify that the system enforces strong password policies.
--  [ ] **Brute Force Protection**: Check if rate limiting is enabled on `/api/auth/*` endpoints.
--  [ ] **Session Management**: Ensure session tokens (cookies) are HttpOnly and Secure.
+-  [x] **Weak Passwords**: Verify that the system enforces strong password policies.
+-  [x] **Brute Force Protection**: Check if rate limiting is enabled on `/api/auth/*` endpoints.
+-  [x] **Session Management**: Ensure session tokens (cookies) are HttpOnly and Secure.
 -  [ ] **IDOR (Insecure Direct Object References)**:
    -  [ ] Can User A view User B's brands?
    -  [ ] Can User A download User B's generated logos?
@@ -16,7 +16,7 @@
 
 ## 2. Input Validation (Injection Attacks)
 
--  [ ] **SQL Injection**: Test search bars and ID parameters (Drizzle ORM helps, but check raw queries).
+-  [x] **SQL Injection**: Test search bars and ID parameters (Drizzle ORM helps, but check raw queries).
 -  [ ] **XSS (Cross-Site Scripting)**:
    -  [ ] Test Brand Name and Tagline inputs with script tags `<script>alert(1)</script>`.
    -  [ ] Check if user input is properly escaped in the dashboard.
@@ -24,9 +24,9 @@
 
 ## 3. Business Logic & Payments
 
--  [ ] **Price Manipulation**: Intercept requests to change the `amount` before sending to Midtrans.
--  [ ] **Credit Bypass**: Attempt to generate logos without sufficient credits.
--  [ ] **Webhook Spoofing**: Send fake success payloads to the Midtrans webhook endpoint (`/api/webhooks/midtrans`). _Verify signature validation works._
+-  [x] **Price Manipulation**: Intercept requests to change the `amount` before sending to Midtrans.
+-  [x] **Credit Bypass**: Attempt to generate logos without sufficient credits.
+-  [x] **Webhook Spoofing**: Send fake success payloads to the Midtrans webhook endpoint (`/api/webhooks/midtrans`). _Verify signature validation works._
 -  [ ] **Race Conditions**: fast-click "Generate" or "Purchase" buttons to see if credits/transactions are double-counted.
 
 ## 4. Info Disclosure

@@ -1,6 +1,6 @@
 import { auth } from "@/lib/auth";
 import { db } from "@/db";
-import { transactions, users } from "@/db/schema";
+import { transactions, users, settings } from "@/db/schema";
 import { createTransaction, PLANS, PlanType } from "@/lib/midtrans";
 import { eq } from "drizzle-orm";
 
@@ -35,8 +35,14 @@ export async function POST(request: Request) {
         let planName: string;
 
         // Handle credit purchase (custom amount)
-        if (type === "credit" && credits && customAmount) {
-            amount = customAmount;
+        if (type === "credit" && credits) {
+            // Fetch dynamic price from settings
+            const priceSetting = await db.query.settings.findFirst({
+                where: eq(settings.key, "credit_price"),
+            });
+            const PRICE_PER_CREDIT = priceSetting ? parseInt(priceSetting.value) : 2000;
+
+            amount = credits * PRICE_PER_CREDIT;
             creditCount = credits;
             planName = `${credits} Credits`;
         }

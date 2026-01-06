@@ -98,15 +98,48 @@ export const createTransaction = async (params: {
 };
 
 export const verifyNotification = async (notificationJson: any) => {
-    // Midtrans notification verification using snap
-    const orderId = notificationJson.order_id;
-    const transactionStatus = notificationJson.transaction_status;
-    const fraudStatus = notificationJson.fraud_status;
+    // 1. Get server key (make sure to handle production/sandbox properly)
+    const serverKey = process.env.MIDTRANS_SERVER_KEY;
+    if (!serverKey) {
+        throw new Error("Midtrans Server Key is missing in environment variables");
+    }
+
+    // 2. Extract necessary fields
+    const {
+        order_id,
+        status_code,
+        gross_amount,
+        signature_key,
+        transaction_status,
+        fraud_status,
+        transaction_id
+    } = notificationJson;
+
+    if (!signature_key || !order_id || !status_code || !gross_amount) {
+        throw new Error("Invalid notification payload: missing signature fields");
+    }
+
+    // 3. Create SHA512 hash of order_id + status_code + gross_amount + ServerKey
+    // Note: gross_amount usually comes as a string (e.g., "10000.00"), verify format if needed.
+    // Midtrans requires the exact string value sent in the payload.
+    const rawString = `${order_id}${status_code}${gross_amount}${serverKey}`;
+
+    // We can use the crypto module from Node or Web Crypto API
+    const crypto = await import("crypto");
+    const expectedSignature = crypto
+        .createHash("sha512")
+        .update(rawString)
+        .digest("hex");
+
+    // 4. Compare
+    if (signature_key !== expectedSignature) {
+        throw new Error("Invalid Signature: Potential Webhook Spoofing Attempt");
+    }
 
     return {
-        order_id: orderId,
-        transaction_status: transactionStatus,
-        fraud_status: fraudStatus,
-        transaction_id: notificationJson.transaction_id,
+        order_id,
+        transaction_status,
+        fraud_status,
+        transaction_id,
     };
 };

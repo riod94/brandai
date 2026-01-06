@@ -3,10 +3,14 @@ import { transactions, users } from "@/db/schema";
 import { eq, sql } from "drizzle-orm";
 import { headers } from "next/headers";
 
+import { verifyNotification } from "@/lib/midtrans";
+
 export async function POST(request: Request) {
     try {
         const body = await request.json();
-        const { order_id, transaction_status, fraud_status } = body;
+
+        // Verify signature (throws error if invalid)
+        const { order_id, transaction_status, fraud_status } = await verifyNotification(body);
 
         console.log(`Midtrans Webhook: ${order_id} - ${transaction_status}`);
 
