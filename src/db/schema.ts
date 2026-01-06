@@ -25,6 +25,7 @@ export const users = pgTable("user", {
     role: text("role").default("user").notNull(), // user | admin
     createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
     updatedAt: timestamp("updated_at", { mode: "date" }).defaultNow().notNull(),
+    isBlocked: boolean("is_blocked").default(false),
 });
 
 export const accounts = pgTable(
@@ -103,11 +104,47 @@ export const logos = pgTable("logo", {
     userId: text("user_id")
         .notNull()
         .references(() => users.id, { onDelete: "cascade" }),
+    brandId: text("brand_id").references(() => brands.id, { onDelete: "set null" }),
     name: text("name").notNull(),
     slogan: text("slogan"),
     imageUrl: text("image_url").notNull(),
     prompt: text("prompt").notNull(),
     createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
+});
+
+export const brands = pgTable("brand", {
+    id: text("id")
+        .primaryKey()
+        .$defaultFn(() => crypto.randomUUID()),
+    userId: text("user_id")
+        .notNull()
+        .references(() => users.id, { onDelete: "cascade" }),
+    name: text("name").notNull(),
+    tagline: text("tagline"),
+    industry: text("industry"),
+    description: text("description"),
+    primaryColor: text("primary_color"),
+    secondaryColor: text("secondary_color"),
+    accentColor: text("accent_color"),
+    primaryFont: text("primary_font"),
+    secondaryFont: text("secondary_font"),
+    logoUrl: text("logo_url"),
+    createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { mode: "date" }).defaultNow().notNull(),
+});
+
+export const paymentMethods = pgTable("payment_method", {
+    id: text("id")
+        .primaryKey()
+        .$defaultFn(() => crypto.randomUUID()),
+    name: text("name").notNull(),
+    type: text("type").notNull(), // manual_bank | qris | gateway (e.g. midtrans)
+    accountNumber: text("account_number"),
+    accountName: text("account_name"),
+    isActive: boolean("is_active").default(true).notNull(),
+    instructions: text("instructions"), // Markdown or HTML instructions
+    createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { mode: "date" }).defaultNow().notNull(),
 });
 
 export const transactions = pgTable("transaction", {
@@ -122,8 +159,11 @@ export const transactions = pgTable("transaction", {
     credits: integer("credits").notNull(),
     status: text("status").default("pending").notNull(), // pending | success | failed | refunded
     paymentId: text("payment_id"),
+    paymentMethodId: text("payment_method_id"), // Optional reference to paymentMethods
+    proofUrl: text("proof_url"), // For manual payments
+    notes: text("notes"), // Admin notes or additional info
     plan: text("plan").notNull(),
-    type: text("type").default("credit").notNull(), // credit | subscription
+    type: text("type").default("credit").notNull(), // credit | subscription | adjustment
     createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
     updatedAt: timestamp("updated_at", { mode: "date" }).defaultNow().notNull(),
 });
@@ -152,6 +192,7 @@ export const settings = pgTable("setting", {
 
 export const usersRelations = relations(users, ({ many }) => ({
     logos: many(logos),
+    brands: many(brands),
     transactions: many(transactions),
     subscriptions: many(subscriptions),
     accounts: many(accounts),
@@ -163,12 +204,28 @@ export const logosRelations = relations(logos, ({ one }) => ({
         fields: [logos.userId],
         references: [users.id],
     }),
+    brand: one(brands, {
+        fields: [logos.brandId],
+        references: [brands.id],
+    }),
+}));
+
+export const brandsRelations = relations(brands, ({ one, many }) => ({
+    user: one(users, {
+        fields: [brands.userId],
+        references: [users.id],
+    }),
+    logos: many(logos),
 }));
 
 export const transactionsRelations = relations(transactions, ({ one }) => ({
     user: one(users, {
         fields: [transactions.userId],
         references: [users.id],
+    }),
+    paymentMethod: one(paymentMethods, {
+        fields: [transactions.paymentMethodId],
+        references: [paymentMethods.id],
     }),
 }));
 
@@ -190,4 +247,8 @@ export type NewTransaction = typeof transactions.$inferInsert;
 export type Subscription = typeof subscriptions.$inferSelect;
 export type NewSubscription = typeof subscriptions.$inferInsert;
 export type Setting = typeof settings.$inferSelect;
+export type Brand = typeof brands.$inferSelect;
+export type NewBrand = typeof brands.$inferInsert;
+export type PaymentMethod = typeof paymentMethods.$inferSelect;
+export type NewPaymentMethod = typeof paymentMethods.$inferInsert;
 

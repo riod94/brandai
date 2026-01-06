@@ -74,7 +74,7 @@ function PrivacyPolicy() {
 							</h2>
 							<p className="mb-4">
 								If you have any questions about this Privacy Policy,
-								please contact us at: support@brandai.com
+								please contact us at: support@berandai.com
 							</p>
 						</section>
 					</div>

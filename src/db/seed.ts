@@ -6,7 +6,7 @@ async function seed() {
     console.log("🌱 Seeding database...");
 
     // Create admin user
-    const adminEmail = "admin@brandai.com";
+    const adminEmail = "admin@berandai.com";
     const existingAdmin = await db.query.users.findFirst({
         where: (users, { eq }) => eq(users.email, adminEmail),
     });
@@ -23,7 +23,7 @@ async function seed() {
             plan: "admin",
         });
 
-        console.log("✅ Admin user created: admin@brandai.com / admin123");
+        console.log("✅ Admin user created: admin@berandai.com / admin123");
     } else {
         console.log("ℹ️  Admin user already exists");
     }

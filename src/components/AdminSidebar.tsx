@@ -1,7 +1,7 @@
 "use client";
-import { Link } from "@heroui/link";
+import { useState } from "react";
 import { usePathname } from "next/navigation";
-import { useTheme } from "next-themes";
+import { Link } from "@heroui/link";
 import {
 	LayoutDashboard,
 	Users,
@@ -10,27 +10,23 @@ import {
 	Menu,
 	X,
 	Shield,
-	Sun,
-	Moon,
 } from "lucide-react";
-import { useState, useEffect } from "react";
 
 const navItems = [
 	{ label: "Dashboard", href: "/admin", icon: LayoutDashboard },
 	{ label: "Users", href: "/admin/users", icon: Users },
 	{ label: "Transactions", href: "/admin/transactions", icon: CreditCard },
 	{ label: "Pricing", href: "/admin/pricing", icon: Settings },
+	{
+		label: "Payment Settings",
+		href: "/admin/settings/payments",
+		icon: CreditCard,
+	},
 ];
 
 export default function AdminSidebar() {
 	const pathname = usePathname();
 	const [isOpen, setIsOpen] = useState(false);
-	const { theme, setTheme } = useTheme();
-	const [mounted, setMounted] = useState(false);
-
-	useEffect(() => {
-		setMounted(true);
-	}, []);
 
 	return (
 		<>
@@ -104,27 +100,6 @@ export default function AdminSidebar() {
 
 					{/* Footer */}
 					<div className="p-4 border-t border-gray-200 dark:border-gray-800 space-y-3">
-						{/* Theme Toggle */}
-						<button
-							onClick={() =>
-								setTheme(theme === "dark" ? "light" : "dark")
-							}
-							className="flex items-center justify-center gap-2 w-full py-2 px-4 rounded-xl bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
-						>
-							{mounted && (
-								<>
-									{theme === "dark" ? (
-										<Sun className="w-4 h-4" />
-									) : (
-										<Moon className="w-4 h-4" />
-									)}
-									<span className="text-sm">
-										{theme === "dark" ? "Light Mode" : "Dark Mode"}
-									</span>
-								</>
-							)}
-						</button>
-
 						{/* Back to App */}
 						<Link
 							href="/app"

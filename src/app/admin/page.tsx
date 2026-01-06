@@ -43,7 +43,7 @@ export default async function AdminDashboard() {
 			</div>
 
 			{/* Stats Grid */}
-			<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+			<div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
 				<Card className="bg-gradient-to-br from-blue-500/10 to-indigo-500/10 border border-blue-500/20">
 					<CardBody className="p-6">
 						<div className="flex items-center justify-between">

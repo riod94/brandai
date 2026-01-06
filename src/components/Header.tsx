@@ -29,6 +29,7 @@ export default function Header() {
 	const pathname = usePathname();
 	const menuItems = [
 		{ label: "Create Logo", link: "/create/logo" },
+		{ label: "Create Brand", link: "/create/brand" },
 		{ label: "Pricing", link: "/#pricing" },
 		{ label: "About", link: "/about" },
 	];

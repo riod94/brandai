@@ -15,17 +15,8 @@ export async function POST(request: Request) {
             );
         }
 
-        const { planId } = await request.json();
-
-        if (!planId || !["basic", "pro"].includes(planId)) {
-            return Response.json(
-                { error: "Invalid plan" },
-                { status: 400 }
-            );
-        }
-
-        const plan = PLANS[planId as PlanType];
-        const orderId = `BRANDAI-${session.user.id.slice(0, 8)}-${Date.now()}`;
+        const body = await request.json();
+        const { planId, type, credits, amount: customAmount } = body;
 
         // Get user details
         const user = await db.query.users.findFirst({
@@ -39,11 +30,37 @@ export async function POST(request: Request) {
             );
         }
 
+        let amount: number;
+        let creditCount: number;
+        let planName: string;
+
+        // Handle credit purchase (custom amount)
+        if (type === "credit" && credits && customAmount) {
+            amount = customAmount;
+            creditCount = credits;
+            planName = `${credits} Credits`;
+        }
+        // Handle plan purchase
+        else if (planId && ["basic", "pro"].includes(planId)) {
+            const plan = PLANS[planId as PlanType];
+            amount = plan.price;
+            creditCount = plan.credits;
+            planName = plan.name;
+        }
+        else {
+            return Response.json(
+                { error: "Invalid payment request" },
+                { status: 400 }
+            );
+        }
+
+        const orderId = `BERANDAI-${session.user.id.slice(0, 8)}-${Date.now()}`;
+
         // Create Midtrans transaction
         const midtransResponse = await createTransaction({
             orderId,
-            amount: plan.price,
-            planName: plan.name,
+            amount,
+            planName,
             customerEmail: user.email!,
             customerName: user.name || "Customer",
         });
@@ -52,9 +69,9 @@ export async function POST(request: Request) {
         await db.insert(transactions).values({
             userId: session.user.id,
             orderId,
-            amount: plan.price,
-            credits: plan.credits,
-            plan: planId,
+            amount,
+            credits: creditCount,
+            plan: planId || "credit",
             status: "pending",
         });
 
@@ -67,7 +84,7 @@ export async function POST(request: Request) {
     } catch (error) {
         console.error("Payment create error:", error);
         return Response.json(
-            { error: "Failed to create payment" },
+            { error: "Failed to create payment", details: error instanceof Error ? error.message : "Unknown" },
             { status: 500 }
         );
     }

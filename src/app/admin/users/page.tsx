@@ -1,35 +1,80 @@
 "use client";
 import { useEffect, useState } from "react";
-import { Card, CardBody, CardHeader } from "@heroui/card";
+import { Card, CardBody } from "@heroui/card";
+import { Input, Textarea } from "@heroui/input";
 import { Button } from "@heroui/button";
-import { Input } from "@heroui/input";
-import { Skeleton } from "@heroui/skeleton";
 import {
-	Users,
+	Table,
+	TableHeader,
+	TableBody,
+	TableColumn,
+	TableRow,
+	TableCell,
+} from "@heroui/table";
+import { Chip } from "@heroui/chip";
+import {
+	Modal,
+	ModalContent,
+	ModalHeader,
+	ModalBody,
+	ModalFooter,
+	useDisclosure,
+} from "@heroui/modal";
+import {
 	Search,
-	Coins,
-	MoreVertical,
-	Crown,
+	Plus,
+	UserCog,
+	Ban,
+	CheckCircle,
 	Shield,
+	Coins,
+	Minus,
 } from "lucide-react";
+import { Tabs, Tab } from "@heroui/tabs";
 
 interface User {
 	id: string;
 	name: string;
 	email: string;
+	role: "user" | "admin";
 	credits: number;
-	plan: string;
-	role: string;
+	image: string | null;
 	createdAt: string;
+	isBlocked?: boolean;
 }
 
 export default function AdminUsersPage() {
 	const [users, setUsers] = useState<User[]>([]);
-	const [isLoading, setIsLoading] = useState(true);
 	const [search, setSearch] = useState("");
-	const [topupUserId, setTopupUserId] = useState<string | null>(null);
-	const [topupAmount, setTopupAmount] = useState(5);
-	const [isTopping, setIsTopping] = useState(false);
+	const [isLoading, setIsLoading] = useState(true);
+
+	// Edit User Modal
+	const {
+		isOpen: isEditOpen,
+		onOpen: onEditOpen,
+		onClose: onEditClose,
+	} = useDisclosure();
+	const [editingUser, setEditingUser] = useState<User | null>(null);
+	const [editForm, setEditForm] = useState({
+		name: "",
+		email: "",
+		isBlocked: false,
+	});
+
+	// Credits Modal
+	const {
+		isOpen: isCreditsOpen,
+		onOpen: onCreditsOpen,
+		onClose: onCreditsClose,
+	} = useDisclosure();
+	const [creditUser, setCreditUser] = useState<User | null>(null);
+	const [creditForm, setCreditForm] = useState({
+		amount: 10,
+		notes: "",
+		type: "add" as "add" | "deduct",
+	});
+
+	const [loadingAction, setLoadingAction] = useState(false);
 
 	useEffect(() => {
 		fetchUsers();
@@ -39,7 +84,7 @@ export default function AdminUsersPage() {
 		try {
 			const res = await fetch("/api/admin/users");
 			const data = await res.json();
-			if (!data.error) {
+			if (data.users) {
 				setUsers(data.users);
 			}
 		} catch (error) {
@@ -49,258 +94,347 @@ export default function AdminUsersPage() {
 		}
 	};
 
-	const handleTopup = async (userId: string) => {
-		setIsTopping(true);
-		try {
-			const res = await fetch("/api/admin/users/topup", {
-				method: "POST",
-				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify({ userId, credits: topupAmount }),
-			});
-
-			if (res.ok) {
-				setUsers((prev) =>
-					prev.map((u) =>
-						u.id === userId
-							? { ...u, credits: u.credits + topupAmount }
-							: u
-					)
-				);
-				setTopupUserId(null);
-				setTopupAmount(5);
-			}
-		} catch (error) {
-			console.error("Failed to topup:", error);
-		} finally {
-			setIsTopping(false);
-		}
-	};
-
-	const handleSetAdmin = async (userId: string, isAdmin: boolean) => {
-		try {
-			const res = await fetch("/api/admin/users/role", {
-				method: "POST",
-				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify({ userId, role: isAdmin ? "admin" : "user" }),
-			});
-
-			if (res.ok) {
-				setUsers((prev) =>
-					prev.map((u) =>
-						u.id === userId
-							? { ...u, role: isAdmin ? "admin" : "user" }
-							: u
-					)
-				);
-			}
-		} catch (error) {
-			console.error("Failed to update role:", error);
-		}
-	};
-
 	const filteredUsers = users.filter(
 		(user) =>
 			user.name?.toLowerCase().includes(search.toLowerCase()) ||
 			user.email?.toLowerCase().includes(search.toLowerCase())
 	);
 
+	// --- EDIT USER HANDLERS ---
+	const handleEditClick = (user: User) => {
+		setEditingUser(user);
+		setEditForm({
+			name: user.name || "",
+			email: user.email || "",
+			isBlocked: user.isBlocked || false,
+		});
+		onEditOpen();
+	};
+
+	const handleSaveUser = async () => {
+		if (!editingUser) return;
+		setLoadingAction(true);
+		try {
+			const res = await fetch("/api/admin/users/update", {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({ userId: editingUser.id, ...editForm }),
+			});
+			if (res.ok) {
+				fetchUsers();
+				onEditClose();
+			}
+		} catch (error) {
+			console.error("Failed to update user:", error);
+		} finally {
+			setLoadingAction(false);
+		}
+	};
+
+	const handleToggleBlock = (blocked: boolean) => {
+		setEditForm((prev) => ({ ...prev, isBlocked: blocked }));
+	};
+
+	// --- CREDIT ADJUSTMENT HANDLERS ---
+	const handleCreditsClick = (user: User) => {
+		setCreditUser(user);
+		setCreditForm({ amount: 10, notes: "", type: "add" });
+		onCreditsOpen();
+	};
+
+	const handleSaveCredits = async () => {
+		if (!creditUser) return;
+		setLoadingAction(true);
+		try {
+			const res = await fetch("/api/admin/users/credits", {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({
+					userId: creditUser.id,
+					credits: Number(creditForm.amount),
+					type: creditForm.type,
+					notes: creditForm.notes,
+				}),
+			});
+			if (res.ok) {
+				fetchUsers();
+				onCreditsClose();
+			} else {
+				alert("Failed to adjust credits");
+			}
+		} catch (error) {
+			console.error("Failed to adjust credits:", error);
+		} finally {
+			setLoadingAction(false);
+		}
+	};
+
 	return (
 		<div className="max-w-7xl mx-auto space-y-6">
-			{/* Header */}
-			<div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+			<div className="flex justify-between items-center">
 				<div>
-					<h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-						User Management
-					</h1>
-					<p className="text-gray-500 mt-1">
-						Manage users, topup credits, and assign roles
-					</p>
+					<h1 className="text-2xl font-bold">Users</h1>
+					<p className="text-gray-500">Manage user accounts and credits</p>
 				</div>
 				<Input
+					className="w-64"
 					placeholder="Search users..."
+					startContent={<Search className="w-4 h-4 text-gray-500" />}
 					value={search}
-					onChange={(e) => setSearch(e.target.value)}
-					startContent={<Search className="w-4 h-4 text-gray-400" />}
-					className="w-full md:w-72"
-					variant="bordered"
-					radius="lg"
+					onValueChange={setSearch}
 				/>
 			</div>
 
-			{/* Users Table */}
 			<Card className="border border-gray-200 dark:border-gray-800">
 				<CardBody className="p-0">
-					{isLoading ? (
-						<div className="p-6 space-y-4">
-							{[...Array(5)].map((_, i) => (
-								<Skeleton key={i} className="h-16 rounded-xl" />
-							))}
-						</div>
-					) : (
-						<div className="overflow-x-auto">
-							<table className="w-full">
-								<thead className="bg-gray-50 dark:bg-gray-800/50">
-									<tr>
-										<th className="px-6 py-4 text-left text-sm font-semibold text-gray-600 dark:text-gray-400">
-											User
-										</th>
-										<th className="px-6 py-4 text-left text-sm font-semibold text-gray-600 dark:text-gray-400">
-											Credits
-										</th>
-										<th className="px-6 py-4 text-left text-sm font-semibold text-gray-600 dark:text-gray-400">
-											Plan
-										</th>
-										<th className="px-6 py-4 text-left text-sm font-semibold text-gray-600 dark:text-gray-400">
-											Role
-										</th>
-										<th className="px-6 py-4 text-left text-sm font-semibold text-gray-600 dark:text-gray-400">
-											Joined
-										</th>
-										<th className="px-6 py-4 text-right text-sm font-semibold text-gray-600 dark:text-gray-400">
-											Actions
-										</th>
-									</tr>
-								</thead>
-								<tbody className="divide-y divide-gray-100 dark:divide-gray-800">
-									{filteredUsers.map((user) => (
-										<tr
-											key={user.id}
-											className="hover:bg-gray-50 dark:hover:bg-gray-800/30"
+					<Table aria-label="Users table" removeWrapper shadow="none">
+						<TableHeader>
+							<TableColumn>USER</TableColumn>
+							<TableColumn>ROLE</TableColumn>
+							<TableColumn>CREDITS</TableColumn>
+							<TableColumn>STATUS</TableColumn>
+							<TableColumn>JOINED</TableColumn>
+							<TableColumn align="end">ACTIONS</TableColumn>
+						</TableHeader>
+						<TableBody
+							emptyContent={"No users found"}
+							loadingState={isLoading ? "loading" : "idle"}
+						>
+							{filteredUsers.map((user) => (
+								<TableRow key={user.id}>
+									<TableCell>
+										<div className="flex flex-col">
+											<span className="font-medium text-sm">
+												{user.name}
+											</span>
+											<span className="text-xs text-gray-500">
+												{user.email}
+											</span>
+										</div>
+									</TableCell>
+									<TableCell>
+										<Chip
+											size="sm"
+											variant="flat"
+											color={
+												user.role === "admin"
+													? "secondary"
+													: "default"
+											}
+											startContent={
+												user.role === "admin" ? (
+													<Shield className="w-3 h-3" />
+												) : undefined
+											}
 										>
-											<td className="px-6 py-4">
-												<div className="flex items-center gap-3">
-													<div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-white font-semibold">
-														{user.name?.[0]?.toUpperCase() || "U"}
-													</div>
-													<div>
-														<p className="font-semibold flex items-center gap-2">
-															{user.name || "No Name"}
-															{user.role === "admin" && (
-																<Shield className="w-4 h-4 text-red-500" />
-															)}
-														</p>
-														<p className="text-sm text-gray-500">
-															{user.email}
-														</p>
-													</div>
-												</div>
-											</td>
-											<td className="px-6 py-4">
-												<div className="flex items-center gap-2">
-													<Coins className="w-4 h-4 text-amber-500" />
-													<span className="font-semibold">
-														{user.credits}
-													</span>
-												</div>
-											</td>
-											<td className="px-6 py-4">
-												<span className="px-2 py-1 text-xs font-semibold rounded-full bg-primary/10 text-primary capitalize">
-													{user.plan}
-												</span>
-											</td>
-											<td className="px-6 py-4">
-												<span
-													className={`px-2 py-1 text-xs font-semibold rounded-full capitalize ${
-														user.role === "admin"
-															? "bg-red-500/10 text-red-500"
-															: "bg-gray-500/10 text-gray-500"
-													}`}
-												>
-													{user.role}
-												</span>
-											</td>
-											<td className="px-6 py-4 text-sm text-gray-500">
-												{new Date(
-													user.createdAt
-												).toLocaleDateString("id-ID")}
-											</td>
-											<td className="px-6 py-4">
-												<div className="flex items-center justify-end gap-2">
-													{topupUserId === user.id ? (
-														<div className="flex items-center gap-2">
-															<Input
-																type="number"
-																value={topupAmount.toString()}
-																onChange={(e) =>
-																	setTopupAmount(
-																		parseInt(
-																			e.target.value
-																		) || 0
-																	)
-																}
-																className="w-20"
-																size="sm"
-																min={1}
-															/>
-															<Button
-																size="sm"
-																color="success"
-																onPress={() =>
-																	handleTopup(user.id)
-																}
-																isLoading={isTopping}
-															>
-																Add
-															</Button>
-															<Button
-																size="sm"
-																variant="flat"
-																onPress={() =>
-																	setTopupUserId(null)
-																}
-															>
-																Cancel
-															</Button>
-														</div>
-													) : (
-														<>
-															<Button
-																size="sm"
-																variant="flat"
-																color="warning"
-																onPress={() =>
-																	setTopupUserId(user.id)
-																}
-																startContent={
-																	<Coins className="w-4 h-4" />
-																}
-															>
-																Topup
-															</Button>
-															<Button
-																size="sm"
-																variant="flat"
-																color={
-																	user.role === "admin"
-																		? "default"
-																		: "danger"
-																}
-																onPress={() =>
-																	handleSetAdmin(
-																		user.id,
-																		user.role !== "admin"
-																	)
-																}
-																startContent={
-																	<Shield className="w-4 h-4" />
-																}
-															>
-																{user.role === "admin"
-																	? "Remove Admin"
-																	: "Make Admin"}
-															</Button>
-														</>
-													)}
-												</div>
-											</td>
-										</tr>
-									))}
-								</tbody>
-							</table>
-						</div>
-					)}
+											{user.role}
+										</Chip>
+									</TableCell>
+									<TableCell>
+										<div className="font-semibold text-primary">
+											{user.credits}
+										</div>
+									</TableCell>
+									<TableCell>
+										{user.isBlocked ? (
+											<Chip
+												size="sm"
+												color="danger"
+												variant="flat"
+												startContent={<Ban className="w-3 h-3" />}
+											>
+												Blocked
+											</Chip>
+										) : (
+											<Chip size="sm" color="success" variant="dot">
+												Active
+											</Chip>
+										)}
+									</TableCell>
+									<TableCell>
+										<span className="text-xs text-gray-500">
+											{new Date(user.createdAt).toLocaleDateString()}
+										</span>
+									</TableCell>
+									<TableCell>
+										<div className="flex justify-end gap-2">
+											<Button
+												size="sm"
+												variant="light"
+												color="primary"
+												onPress={() => handleCreditsClick(user)}
+												title="Adjust Credits"
+												isIconOnly
+											>
+												<Coins className="w-4 h-4" />
+											</Button>
+											<Button
+												size="sm"
+												variant="light"
+												onPress={() => handleEditClick(user)}
+												title="Edit User"
+												isIconOnly
+											>
+												<UserCog className="w-4 h-4" />
+											</Button>
+										</div>
+									</TableCell>
+								</TableRow>
+							))}
+						</TableBody>
+					</Table>
 				</CardBody>
 			</Card>
+
+			{/* Edit User Modal */}
+			<Modal isOpen={isEditOpen} onClose={onEditClose}>
+				<ModalContent>
+					<ModalHeader>Edit User</ModalHeader>
+					<ModalBody className="space-y-4">
+						<Input
+							label="Name"
+							value={editForm.name}
+							onChange={(e) =>
+								setEditForm({ ...editForm, name: e.target.value })
+							}
+						/>
+						<Input
+							label="Email"
+							value={editForm.email}
+							onChange={(e) =>
+								setEditForm({ ...editForm, email: e.target.value })
+							}
+						/>
+						<div className="flex justify-between items-center p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+							<div>
+								<p className="font-semibold">Block User</p>
+								<p className="text-xs text-gray-500">
+									Prevent login and access
+								</p>
+							</div>
+							<Button
+								size="sm"
+								color={editForm.isBlocked ? "danger" : "default"}
+								variant={editForm.isBlocked ? "solid" : "bordered"}
+								onPress={() => handleToggleBlock(!editForm.isBlocked)}
+							>
+								{editForm.isBlocked ? "Blocked" : "Active"}
+							</Button>
+						</div>
+					</ModalBody>
+					<ModalFooter>
+						<Button variant="flat" onPress={onEditClose}>
+							Cancel
+						</Button>
+						<Button
+							color="primary"
+							onPress={handleSaveUser}
+							isLoading={loadingAction}
+						>
+							Save Changes
+						</Button>
+					</ModalFooter>
+				</ModalContent>
+			</Modal>
+
+			{/* Credits Adjustment Modal */}
+			<Modal isOpen={isCreditsOpen} onClose={onCreditsClose}>
+				<ModalContent>
+					<ModalHeader>Adjust Credits: {creditUser?.name}</ModalHeader>
+					<ModalBody>
+						<Tabs
+							fullWidth
+							selectedKey={creditForm.type}
+							onSelectionChange={(key) =>
+								setCreditForm({
+									...creditForm,
+									type: key as "add" | "deduct",
+								})
+							}
+						>
+							<Tab
+								key="add"
+								title={
+									<div className="flex items-center gap-2">
+										<Plus className="w-4 h-4" /> Add Credits
+									</div>
+								}
+							/>
+							<Tab
+								key="deduct"
+								title={
+									<div className="flex items-center gap-2">
+										<Minus className="w-4 h-4" /> Deduct Credits
+									</div>
+								}
+							/>
+						</Tabs>
+
+						<div className="space-y-4 mt-4">
+							<Input
+								type="number"
+								label="Amount"
+								placeholder="0"
+								value={String(creditForm.amount)}
+								onChange={(e) =>
+									setCreditForm({
+										...creditForm,
+										amount: Number(e.target.value),
+									})
+								}
+							/>
+							<Textarea
+								label="Notes (Optional)"
+								placeholder="Reason for adjustment..."
+								value={creditForm.notes}
+								onChange={(e) =>
+									setCreditForm({
+										...creditForm,
+										notes: e.target.value,
+									})
+								}
+							/>
+							<p className="text-sm text-gray-500">
+								Current Balance:{" "}
+								<span className="font-bold">{creditUser?.credits}</span>
+								{creditForm.amount > 0 && (
+									<span>
+										{" "}
+										- New Balance:{" "}
+										<span
+											className={
+												creditForm.type === "add"
+													? "text-success font-bold"
+													: "text-danger font-bold"
+											}
+										>
+											{creditForm.type === "add"
+												? (creditUser?.credits || 0) +
+												  creditForm.amount
+												: (creditUser?.credits || 0) -
+												  creditForm.amount}
+										</span>
+									</span>
+								)}
+							</p>
+						</div>
+					</ModalBody>
+					<ModalFooter>
+						<Button variant="flat" onPress={onCreditsClose}>
+							Cancel
+						</Button>
+						<Button
+							color={creditForm.type === "add" ? "primary" : "danger"}
+							onPress={handleSaveCredits}
+							isLoading={loadingAction}
+						>
+							{creditForm.type === "add"
+								? "Add Credits"
+								: "Deduct Credits"}
+						</Button>
+					</ModalFooter>
+				</ModalContent>
+			</Modal>
 		</div>
 	);
 }

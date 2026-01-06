@@ -144,7 +144,7 @@ export default function FormLogoStyles() {
 					<div className="flex flex-col sm:flex-row gap-4 w-full mb-8">
 						<CheckBoxGroup
 							items={styles}
-                            selected={state.styles}
+							selected={state.styles}
 							onCheckboxChange={handleOnCheckboxChange}
 						/>
 					</div>
@@ -165,10 +165,14 @@ export default function FormLogoStyles() {
 							type="submit"
 							isDisabled={state.styles.length === 0}
 							endContent={<ArrowRight />}
+							className="bg-gradient-to-r from-primary to-secondary"
 						>
-							Continue
+							Generate (1 Credit)
 						</Button>
 					</div>
+					<p className="text-xs text-amber-600 dark:text-amber-400 mt-3 text-center">
+						⚠️ Generating a logo will use 1 credit from your account
+					</p>
 				</Form>
 			</CardBody>
 		</Card>

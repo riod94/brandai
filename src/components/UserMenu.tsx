@@ -11,6 +11,7 @@ import {
 	Settings,
 } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
+import { usePathname, useRouter } from "next/navigation";
 
 interface UserCredits {
 	credits: number;
@@ -19,11 +20,28 @@ interface UserCredits {
 	role: string;
 }
 
+const navItems = [
+	{ label: "Dashboard", href: "/app", icon: LayoutDashboard },
+	{ label: "Credits", href: "/app/credits", icon: Coins },
+	{ label: "Profile", href: "/app/profile", icon: User },
+	{ label: "Admin Panel", href: "/admin", icon: Settings },
+];
+
 export default function UserMenu() {
 	const { data: session, status } = useSession();
 	const [isOpen, setIsOpen] = useState(false);
 	const [userCredits, setUserCredits] = useState<UserCredits | null>(null);
 	const menuRef = useRef<HTMLDivElement>(null);
+	const router = useRouter();
+	const pathname = usePathname();
+
+	// filter navItems based on user role
+	const filteredNavItems = navItems.filter((item) => {
+		if (item.href === "/admin") {
+			return userCredits?.role === "admin";
+		}
+		return true;
+	});
 
 	useEffect(() => {
 		function handleClickOutside(event: MouseEvent) {
@@ -92,6 +110,11 @@ export default function UserMenu() {
 				.slice(0, 2)
 		: session.user.email?.slice(0, 2).toUpperCase() || "U";
 
+	const handleNavClick = ({ href }: { href: string }) => {
+		setIsOpen(false);
+		router.push(href);
+	};
+
 	return (
 		<div className="flex items-center gap-3">
 			{/* Credit Badge */}
@@ -150,40 +173,30 @@ export default function UserMenu() {
 						</div>
 
 						<div className="py-2">
-							<Link
-								href="/app"
-								className="flex items-center gap-3 px-4 py-2.5 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-								onClick={() => setIsOpen(false)}
-							>
-								<LayoutDashboard className="w-4 h-4 text-gray-500" />
-								Dashboard
-							</Link>
-							<Link
-								href="/app/credits"
-								className="flex items-center gap-3 px-4 py-2.5 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-								onClick={() => setIsOpen(false)}
-							>
-								<CreditCard className="w-4 h-4 text-gray-500" />
-								Credits
-							</Link>
-							<Link
-								href="/app/profile"
-								className="flex items-center gap-3 px-4 py-2.5 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-								onClick={() => setIsOpen(false)}
-							>
-								<User className="w-4 h-4 text-gray-500" />
-								Profile
-							</Link>
-							{userCredits?.role === "admin" && (
-								<Link
-									href="/admin"
-									className="flex items-center gap-3 px-4 py-2.5 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors text-primary"
-									onClick={() => setIsOpen(false)}
-								>
-									<Settings className="w-4 h-4" />
-									Admin Panel
-								</Link>
-							)}
+							{filteredNavItems.map((item) => {
+								const Icon = item.icon;
+								const isActive = pathname === item.href;
+
+								return (
+									<Link
+										key={item.href}
+										href={item.href}
+										onPress={() => handleNavClick(item)}
+										className={`flex items-center gap-3 px-4 py-2.5 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors ${
+											isActive
+												? "bg-gray-100 dark:bg-gray-800 text-primary font-semibold"
+												: "text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-white"
+										}`}
+									>
+										<Icon
+											className={`w-4 h-4 ${
+												isActive ? "text-primary" : ""
+											}`}
+										/>
+										{item.label}
+									</Link>
+								);
+							})}
 						</div>
 
 						<div className="border-t border-gray-100 dark:border-gray-700 pt-2">

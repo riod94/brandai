@@ -1,41 +1,48 @@
 import { auth } from "@/lib/auth";
 import { db } from "@/db";
-import { users, transactions } from "@/db/schema";
+import { transactions, users, paymentMethods } from "@/db/schema";
 import { eq, desc } from "drizzle-orm";
 
-async function isAdmin() {
-    const session = await auth();
-    if (!session?.user?.id) return false;
-
-    const user = await db.query.users.findFirst({
-        where: eq(users.id, session.user.id),
-        columns: { role: true },
-    });
-
-    return user?.role === "admin";
-}
-
-export async function GET() {
-    if (!(await isAdmin())) {
-        return Response.json({ error: "Forbidden" }, { status: 403 });
-    }
-
+export async function GET(request: Request) {
     try {
-        const allTransactions = await db.query.transactions.findMany({
-            orderBy: [desc(transactions.createdAt)],
+        const session = await auth();
+
+        if (session?.user?.role !== "admin") {
+            return Response.json(
+                { error: "Unauthorized" },
+                { status: 401 }
+            );
+        }
+
+        const txs = await db.query.transactions.findMany({
             with: {
-                user: {
-                    columns: {
-                        name: true,
-                        email: true,
-                    },
-                },
+                user: true,
+                // Include payment method if possible, but schema relations might be needed or just manual join/fetch if relation not defined
             },
+            orderBy: (transactions, { desc }) => [desc(transactions.createdAt)],
         });
 
-        return Response.json({ transactions: allTransactions });
+        // If relation 'paymentMethod' not defined in schema (it wasn't explicitly added), 
+        // we might want to fetch associated method names or join.
+        // For now, let's just return what we have. If we need method name, we can fetch all methods and map, or update schema relation.
+
+        // Let's fetch all payment methods to map names efficiently
+        const methods = await db.query.paymentMethods.findMany();
+        const methodMap = new Map(methods.map(m => [m.id, m]));
+
+        const enrichedTxs = txs.map(tx => ({
+            ...tx,
+            paymentMethodName: tx.paymentMethodId ? methodMap.get(tx.paymentMethodId)?.name : "Midtrans/Unknown",
+            paymentMethodType: tx.paymentMethodId ? methodMap.get(tx.paymentMethodId)?.type : "gateway",
+        }));
+
+        return Response.json({ transactions: enrichedTxs });
+
     } catch (error) {
-        console.error("Get transactions error:", error);
-        return Response.json({ error: "Failed to get transactions" }, { status: 500 });
+        console.error("Failed to fetch transactions:", error);
+        return Response.json(
+            { error: "Failed to fetch transactions" },
+            { status: 500 }
+        );
     }
 }

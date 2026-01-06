@@ -1,5 +1,5 @@
 {
-  "name": "brandai",
+  "name": "berandai",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -12,7 +12,11 @@
     "db:migrate": "drizzle-kit migrate",
     "db:push": "drizzle-kit push",
     "db:pull": "drizzle-kit pull",
-    "db:seed": "bun run src/db/seed.ts"
+    "db:seed": "bun run src/db/seed.ts",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:e2e": "vitest run tests/e2e",
+    "test:unit": "vitest run tests/unit"
   },
   "dependencies": {
     "@auth/drizzle-adapter": "^1.11.1",
@@ -28,12 +32,25 @@
     "@heroui/image": "^2.2.6",
     "@heroui/input": "^2.4.10",
     "@heroui/link": "^2.2.8",
+    "@heroui/listbox": "^2.3.28",
+    "@heroui/modal": "^2.2.26",
     "@heroui/navbar": "^2.2.9",
+    "@heroui/popover": "^2.3.29",
+    "@heroui/react-utils": "^2.1.14",
+    "@heroui/scroll-shadow": "^2.3.19",
+    "@heroui/select": "^2.4.30",
     "@heroui/skeleton": "^2.2.6",
     "@heroui/spinner": "^2.2.7",
-    "@heroui/system": "^2.4.7",
-    "@heroui/theme": "^2.4.6",
+    "@heroui/switch": "^2.2.26",
+    "@heroui/system": "^2.4.25",
+    "@heroui/table": "^2.2.29",
+    "@heroui/tabs": "^2.2.26",
+    "@heroui/theme": "^2.4.25",
+    "@heroui/tooltip": "^2.2.26",
     "@huggingface/inference": "^4.13.5",
+    "@imgly/background-removal-node": "^1.4.5",
+    "@neplex/vectorizer": "^0.0.5",
+    "@neplex/vectorizer-darwin-arm64": "^0.0.5",
     "bcryptjs": "^3.0.3",
     "cloudinary": "^2.8.0",
     "clsx": "^2.1.1",
@@ -47,19 +64,26 @@
     "postgres": "^3.4.7",
     "react": "^19.2.3",
     "react-dom": "^19.2.3",
+    "sharp": "^0.34.5",
     "snippet": "^0.1.0",
     "swr": "^2.3.2",
     "valibot": "^1.0.0-beta.15"
   },
   "devDependencies": {
+    "@testing-library/dom": "^10.4.1",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.1",
     "@types/bcryptjs": "^3.0.0",
     "@types/midtrans-client": "^1.4.0",
     "@types/node": "^20.17.17",
     "@types/react": "^19.2.7",
     "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^5.1.2",
     "drizzle-kit": "^0.31.8",
+    "jsdom": "^27.4.0",
     "postcss": "^8.5.1",
     "tailwindcss": "^3.4.17",
-    "typescript": "^5.7.3"
+    "typescript": "^5.7.3",
+    "vitest": "^4.0.16"
   }
 }

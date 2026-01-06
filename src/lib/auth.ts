@@ -73,6 +73,15 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         async session({ session, token }) {
             if (token && session.user) {
                 session.user.id = token.id as string;
+
+                // Fetch latest user data to ensure role is up to date
+                const dbUser = await db.query.users.findFirst({
+                    where: eq(users.id, token.id as string),
+                });
+
+                if (dbUser) {
+                    session.user.role = dbUser.role as "admin" | "user";
+                }
             }
             return session;
         },

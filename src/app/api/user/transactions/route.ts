@@ -15,6 +15,9 @@ export async function GET() {
             where: eq(transactions.userId, session.user.id),
             orderBy: [desc(transactions.createdAt)],
             limit: 20,
+            with: {
+                paymentMethod: true,
+            },
         });
 
         return Response.json({ transactions: userTransactions });

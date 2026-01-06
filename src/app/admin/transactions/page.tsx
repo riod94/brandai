@@ -2,14 +2,18 @@
 import { useEffect, useState } from "react";
 import { Card, CardBody } from "@heroui/card";
 import { Button } from "@heroui/button";
-import { Skeleton } from "@heroui/skeleton";
+import { Chip } from "@heroui/chip";
+import { Select, SelectItem } from "@heroui/select";
 import {
-	CreditCard,
 	CheckCircle,
-	Clock,
 	XCircle,
-	RefreshCw,
+	Clock,
+	Search,
+	ExternalLink,
+	Filter,
 } from "lucide-react";
+import { Link } from "@heroui/link";
+import ConfirmationModal from "@/components/Modals/ConfirmationModal";
 
 interface Transaction {
 	id: string;
@@ -17,8 +21,10 @@ interface Transaction {
 	amount: number;
 	credits: number;
 	status: string;
-	plan: string;
 	type: string;
+	plan: string;
+	paymentMethodName?: string;
+	proofUrl?: string;
 	createdAt: string;
 	user: {
 		name: string;
@@ -29,7 +35,15 @@ interface Transaction {
 export default function AdminTransactionsPage() {
 	const [transactions, setTransactions] = useState<Transaction[]>([]);
 	const [isLoading, setIsLoading] = useState(true);
-	const [processingId, setProcessingId] = useState<string | null>(null);
+	const [filterStatus, setFilterStatus] = useState("all");
+
+	// Modal State
+	const [isConfirmOpen, setIsConfirmOpen] = useState(false);
+	const [actionType, setActionType] = useState<"success" | "failed">(
+		"success"
+	);
+	const [selectedTxId, setSelectedTxId] = useState<string | null>(null);
+	const [isProcessing, setIsProcessing] = useState(false);
 
 	useEffect(() => {
 		fetchTransactions();
@@ -39,7 +53,7 @@ export default function AdminTransactionsPage() {
 		try {
 			const res = await fetch("/api/admin/transactions");
 			const data = await res.json();
-			if (!data.error) {
+			if (data.transactions) {
 				setTransactions(data.transactions);
 			}
 		} catch (error) {
@@ -49,195 +63,261 @@ export default function AdminTransactionsPage() {
 		}
 	};
 
-	const handleApprove = async (txId: string) => {
-		setProcessingId(txId);
+	const handleActionClick = (id: string, type: "success" | "failed") => {
+		setSelectedTxId(id);
+		setActionType(type);
+		setIsConfirmOpen(true);
+	};
+
+	const confirmAction = async () => {
+		if (!selectedTxId) return;
+
+		setIsProcessing(true);
 		try {
-			const res = await fetch("/api/admin/transactions/approve", {
-				method: "POST",
+			const res = await fetch(`/api/admin/transactions/${selectedTxId}`, {
+				method: "PATCH",
 				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify({ transactionId: txId }),
+				body: JSON.stringify({ status: actionType }),
 			});
 
 			if (res.ok) {
-				setTransactions((prev) =>
-					prev.map((tx) =>
-						tx.id === txId ? { ...tx, status: "success" } : tx
-					)
-				);
+				fetchTransactions();
+				setIsConfirmOpen(false);
 			}
 		} catch (error) {
-			console.error("Failed to approve:", error);
+			console.error("Failed to update status:", error);
 		} finally {
-			setProcessingId(null);
+			setIsProcessing(false);
+			setSelectedTxId(null);
 		}
 	};
 
-	const formatPrice = (price: number) => {
+	const filteredTransactions = transactions.filter((tx) => {
+		if (filterStatus === "all") return true;
+		return tx.status === filterStatus;
+	});
+
+	const formatCurrency = (amount: number) => {
 		return new Intl.NumberFormat("id-ID", {
 			style: "currency",
 			currency: "IDR",
 			minimumFractionDigits: 0,
-		}).format(price);
-	};
-
-	const getStatusIcon = (status: string) => {
-		switch (status) {
-			case "success":
-				return <CheckCircle className="w-5 h-5 text-emerald-500" />;
-			case "pending":
-				return <Clock className="w-5 h-5 text-amber-500" />;
-			default:
-				return <XCircle className="w-5 h-5 text-red-500" />;
-		}
+		}).format(amount);
 	};
 
 	const getStatusColor = (status: string) => {
 		switch (status) {
 			case "success":
-				return "bg-emerald-500/10 text-emerald-600";
+				return "success";
 			case "pending":
-				return "bg-amber-500/10 text-amber-600";
+				return "warning";
+			case "failed":
+				return "danger";
 			default:
-				return "bg-red-500/10 text-red-600";
+				return "default";
 		}
 	};
 
 	return (
 		<div className="max-w-7xl mx-auto space-y-6">
-			{/* Header */}
-			<div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+			<div className="flex justify-between items-center">
 				<div>
-					<h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-						Transactions
-					</h1>
-					<p className="text-gray-500 mt-1">
-						View and manage all payment transactions
-					</p>
+					<h1 className="text-2xl font-bold">Transactions</h1>
+					<p className="text-gray-500">View and manage purchases</p>
 				</div>
-				<Button
-					variant="flat"
-					startContent={<RefreshCw className="w-4 h-4" />}
-					onPress={fetchTransactions}
-				>
-					Refresh
-				</Button>
+				<div className="flex gap-4">
+					{/* Hydration fix: Select component uses random IDs so we only render it on client */}
+					{isLoading ? (
+						<div className="w-40 h-10 bg-gray-100 rounded-xl animate-pulse" />
+					) : (
+						<Select
+							className="w-40"
+							selectedKeys={[filterStatus]}
+							disallowEmptySelection
+							aria-label="Filter status"
+							onSelectionChange={(keys) => {
+								const selected = Array.from(keys)[0] as string;
+								setFilterStatus(selected || "all");
+							}}
+							startContent={<Filter className="w-4 h-4 text-gray-500" />}
+						>
+							<SelectItem key="all">All Status</SelectItem>
+							<SelectItem key="pending">Pending</SelectItem>
+							<SelectItem key="success">Success</SelectItem>
+							<SelectItem key="failed">Failed</SelectItem>
+						</Select>
+					)}
+				</div>
 			</div>
 
-			{/* Transactions List */}
 			<Card className="border border-gray-200 dark:border-gray-800">
 				<CardBody className="p-0">
-					{isLoading ? (
-						<div className="p-6 space-y-4">
-							{[...Array(5)].map((_, i) => (
-								<Skeleton key={i} className="h-20 rounded-xl" />
-							))}
-						</div>
-					) : transactions.length === 0 ? (
-						<div className="p-12 text-center text-gray-500">
-							<CreditCard className="w-12 h-12 mx-auto mb-3 opacity-50" />
-							<p>No transactions yet</p>
-						</div>
-					) : (
-						<div className="overflow-x-auto">
-							<table className="w-full">
-								<thead className="bg-gray-50 dark:bg-gray-800/50">
-									<tr>
-										<th className="px-6 py-4 text-left text-sm font-semibold text-gray-600 dark:text-gray-400">
-											Order ID
-										</th>
-										<th className="px-6 py-4 text-left text-sm font-semibold text-gray-600 dark:text-gray-400">
-											User
-										</th>
-										<th className="px-6 py-4 text-left text-sm font-semibold text-gray-600 dark:text-gray-400">
-											Type
-										</th>
-										<th className="px-6 py-4 text-left text-sm font-semibold text-gray-600 dark:text-gray-400">
-											Amount
-										</th>
-										<th className="px-6 py-4 text-left text-sm font-semibold text-gray-600 dark:text-gray-400">
-											Status
-										</th>
-										<th className="px-6 py-4 text-left text-sm font-semibold text-gray-600 dark:text-gray-400">
-											Date
-										</th>
-										<th className="px-6 py-4 text-right text-sm font-semibold text-gray-600 dark:text-gray-400">
-											Actions
-										</th>
-									</tr>
-								</thead>
-								<tbody className="divide-y divide-gray-100 dark:divide-gray-800">
-									{transactions.map((tx) => (
-										<tr
-											key={tx.id}
-											className="hover:bg-gray-50 dark:hover:bg-gray-800/30"
-										>
-											<td className="px-6 py-4">
-												<p className="font-mono text-sm">
+					<div className="overflow-x-auto">
+						<table className="w-full">
+							<thead className="bg-gray-50 dark:bg-gray-800/50">
+								<tr>
+									<th className="px-6 py-4 text-left text-sm font-semibold text-gray-600 dark:text-gray-400">
+										Date/ID
+									</th>
+									<th className="px-6 py-4 text-left text-sm font-semibold text-gray-600 dark:text-gray-400">
+										User
+									</th>
+									<th className="px-6 py-4 text-left text-sm font-semibold text-gray-600 dark:text-gray-400">
+										Amount
+									</th>
+									<th className="px-6 py-4 text-left text-sm font-semibold text-gray-600 dark:text-gray-400">
+										Payment
+									</th>
+									<th className="px-6 py-4 text-left text-sm font-semibold text-gray-600 dark:text-gray-400">
+										Status
+									</th>
+									<th className="px-6 py-4 text-right text-sm font-semibold text-gray-600 dark:text-gray-400">
+										Actions
+									</th>
+								</tr>
+							</thead>
+							<tbody className="divide-y divide-gray-100 dark:divide-gray-800">
+								{filteredTransactions.map((tx) => (
+									<tr
+										key={tx.id}
+										className="hover:bg-gray-50 dark:hover:bg-gray-800/30"
+									>
+										<td className="px-6 py-4">
+											<div className="flex flex-col">
+												<span className="font-mono text-xs text-gray-500">
 													{tx.orderId}
-												</p>
-											</td>
-											<td className="px-6 py-4">
-												<div>
-													<p className="font-semibold">
-														{tx.user?.name || "Unknown"}
-													</p>
-													<p className="text-sm text-gray-500">
-														{tx.user?.email}
-													</p>
-												</div>
-											</td>
-											<td className="px-6 py-4">
-												<span className="capitalize">
-													{tx.type === "subscription"
-														? `${tx.plan} Subscription`
-														: `${tx.credits} Credits`}
 												</span>
-											</td>
-											<td className="px-6 py-4 font-semibold">
-												{formatPrice(tx.amount)}
-											</td>
-											<td className="px-6 py-4">
-												<span
-													className={`inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold rounded-full capitalize ${getStatusColor(
-														tx.status
-													)}`}
-												>
-													{getStatusIcon(tx.status)}
-													{tx.status}
+												<span className="text-sm">
+													{new Date(
+														tx.createdAt
+													).toLocaleDateString()}
 												</span>
-											</td>
-											<td className="px-6 py-4 text-sm text-gray-500">
-												{new Date(tx.createdAt).toLocaleDateString(
-													"id-ID",
-													{
-														day: "numeric",
-														month: "short",
-														year: "numeric",
-														hour: "2-digit",
-														minute: "2-digit",
-													}
-												)}
-											</td>
-											<td className="px-6 py-4 text-right">
-												{tx.status === "pending" && (
-													<Button
-														size="sm"
-														color="success"
-														onPress={() => handleApprove(tx.id)}
-														isLoading={processingId === tx.id}
+											</div>
+										</td>
+										<td className="px-6 py-4">
+											<div className="flex flex-col">
+												<span className="font-medium text-sm">
+													{tx.user?.name}
+												</span>
+												<span className="text-xs text-gray-500">
+													{tx.user?.email}
+												</span>
+											</div>
+										</td>
+										<td className="px-6 py-4">
+											<div className="flex flex-col">
+												<span className="font-bold text-sm">
+													{formatCurrency(tx.amount)}
+												</span>
+												<span className="text-xs text-gray-500">
+													{tx.credits} Credits
+												</span>
+											</div>
+										</td>
+										<td className="px-6 py-4">
+											<div className="flex flex-col gap-1">
+												<span className="text-sm font-medium">
+													{tx.paymentMethodName || "Unknown"}
+												</span>
+												{tx.proofUrl && (
+													<a
+														href={tx.proofUrl}
+														target="_blank"
+														rel="noopener noreferrer"
+														className="text-xs text-blue-500 hover:underline flex items-center gap-1"
 													>
-														Approve
-													</Button>
+														View Proof{" "}
+														<ExternalLink className="w-3 h-3" />
+													</a>
 												)}
-											</td>
-										</tr>
-									))}
-								</tbody>
-							</table>
+											</div>
+										</td>
+										<td className="px-6 py-4">
+											<Chip
+												color={getStatusColor(tx.status) as any}
+												size="sm"
+												variant="flat"
+												className="capitalize"
+											>
+												{tx.status}
+											</Chip>
+										</td>
+										<td className="px-6 py-4">
+											<div className="flex justify-end gap-2">
+												{tx.status === "pending" && (
+													<>
+														<Button
+															size="sm"
+															color="success"
+															variant="flat"
+															isIconOnly
+															title="Approve"
+															onPress={() =>
+																handleActionClick(
+																	tx.id,
+																	"success"
+																)
+															}
+														>
+															<CheckCircle className="w-4 h-4" />
+														</Button>
+														<Button
+															size="sm"
+															color="danger"
+															variant="flat"
+															isIconOnly
+															title="Reject"
+															onPress={() =>
+																handleActionClick(
+																	tx.id,
+																	"failed"
+																)
+															}
+														>
+															<XCircle className="w-4 h-4" />
+														</Button>
+													</>
+												)}
+											</div>
+										</td>
+									</tr>
+								))}
+							</tbody>
+						</table>
+					</div>
+					{filteredTransactions.length === 0 && (
+						<div className="text-center py-8 text-gray-500">
+							No transactions found.
 						</div>
 					)}
 				</CardBody>
 			</Card>
+
+			<ConfirmationModal
+				isOpen={isConfirmOpen}
+				onClose={() => setIsConfirmOpen(false)}
+				onConfirm={confirmAction}
+				title={
+					actionType === "success"
+						? "Approve Transaction?"
+						: "Reject Transaction?"
+				}
+				description={
+					actionType === "success"
+						? "Are you sure you want to approve this transaction? Credits will be added to the user's account."
+						: "Are you sure you want to reject this transaction? No credits will be added."
+				}
+				isLoading={isProcessing}
+				color={actionType === "success" ? "success" : "danger"}
+				icon={
+					actionType === "success" ? (
+						<CheckCircle className="w-8 h-8 text-white" />
+					) : (
+						<XCircle className="w-8 h-8 text-white" />
+					)
+				}
+				confirmText={actionType === "success" ? "Approve" : "Reject"}
+			/>
 		</div>
 	);
 }

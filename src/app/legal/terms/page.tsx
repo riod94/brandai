@@ -75,7 +75,7 @@ function Terms() {
 							</h2>
 							<p className="mb-4">
 								Questions about the Terms of Service should be sent to
-								us at: support@brandai.com
+								us at: support@berandai.com
 							</p>
 						</section>
 					</div>

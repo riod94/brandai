@@ -13,7 +13,7 @@ validateEnv();
 
 export const serverConfig = {
     hfToken: process.env.HF_TOKEN || '',
-    hfApiUrl: process.env.HF_API_URL || "https://router.huggingface.co/models/black-forest-labs/FLUX.1-schnell",
+    hfProvider: process.env.HF_PROVIDER || "auto",
     hfModel: process.env.HF_MODEL || "black-forest-labs/FLUX.1-schnell",
     pollinationsApiUrl: process.env.POLLINATIONS_API_URL || "https://image.pollinations.ai/prompt",
 };

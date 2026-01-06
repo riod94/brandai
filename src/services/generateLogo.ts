@@ -3,19 +3,24 @@ import { FormLogoValues } from "@/types";
 import { InferenceClient } from "@huggingface/inference";
 
 const generatePrompt = (values: FormLogoValues): string => {
-    const prompts = [
-        `Create a logo for "${values.name}"`,
-    ];
+    // FLUX models respond better to natural language descriptions
+    let prompt = `A professional, modern, and minimalist vector logo design for a brand named "${values.name}". `;
+
     if (values.slogan) {
-        prompts.push(`and a slogan "${values.slogan}"`);
+        prompt += `Include the text "${values.slogan}" in a complementary elegant font. `;
     }
+
     if (values.styles.length > 0) {
-        prompts.push(`showcasing a stylized of "${values.styles}" style`);
+        prompt += `The design aesthetic should be ${values.styles.join(", ")}. `;
     }
+
     if (values.colors.length > 0) {
-        prompts.push(`with colors "${values.colors}"`);
+        prompt += `Use a color palette consisting of ${values.colors.join(", ")}. `;
     }
-    return prompts.join(" ");
+
+    prompt += `The logo should be centered on a clean background. High quality, 4k resolution, vector graphics style, confident lines, scalable vector art.`;
+
+    return prompt;
 };
 
 const convertToBase64Image = (base64ImageData: string) => {
@@ -27,7 +32,6 @@ const generateLogoWithPollinations = async (prompt: string) => {
         const seed = Math.floor(Math.random() * 1000000);
         const encodedPrompt = encodeURIComponent(prompt);
 
-        // Remove trailing slash if present to avoid double slash
         const baseUrl = serverConfig.pollinationsApiUrl.replace(/\/$/, "");
         const url = `${baseUrl}/${encodedPrompt}?width=1024&height=1024&seed=${seed}&nologo=true&model=flux`;
 
@@ -52,11 +56,11 @@ const generateLogoWithHF = async (prompt: string) => {
         const seed = Math.floor(Math.random() * 1000000);
 
         const response: any = await client.textToImage({
-            provider: "auto",
+            provider: serverConfig.hfProvider as any,
             model: serverConfig.hfModel,
             inputs: prompt,
             parameters: {
-                num_inference_steps: 4,
+                num_inference_steps: 5,
                 seed: seed,
             },
         });
@@ -70,13 +74,8 @@ const generateLogoWithHF = async (prompt: string) => {
     }
 };
 
-
 export const generateLogo = async (values: FormLogoValues): Promise<string> => {
     const prompt = generatePrompt(values);
-
-    // Priority Chain:
-    // 1. Hugging Face (Official SDK)
-    // 2. Pollinations.ai (Fallback)
 
     try {
         return await generateLogoWithHF(prompt);
