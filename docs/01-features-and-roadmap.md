@@ -56,6 +56,7 @@
 
 -  [ ] **Multiple Models**: Integration with DALL-E 3 or Stable Diffusion XL for higher quality generations.
 -  [ ] **Prompt Assistant**: AI helper to refine user prompts for better results.
+-  [ ] **Canvas Editor**: Integrated editor using **Konva.js** for adding text, resizing, and layering brands on logos.
 -  [ ] **In-painting**: Allow users to edit specific parts of a generated logo.
 
 ### Phase 3: Team & Collaboration

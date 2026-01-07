@@ -231,7 +231,7 @@ function SignInContent() {
 				</Form>
 				<div className="text-center">
 					<Link
-						href="/auth/forgot-password"
+						href="/auth/reset"
 						className="text-sm text-gray-500 hover:text-primary/80"
 					>
 						Forgot your password?

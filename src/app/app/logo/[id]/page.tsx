@@ -21,10 +21,12 @@ import {
 	RotateCw,
 	Loader2,
 	Sparkles,
+	Pencil,
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import ConfirmationModal from "@/components/Modals/ConfirmationModal";
+import LogoEditor from "@/components/LogoEditor";
 
 interface Logo {
 	id: string;
@@ -51,6 +53,11 @@ export default function LogoDetailPage() {
 		isOpen: isDeleteOpen,
 		onOpen: onDeleteOpen,
 		onClose: onDeleteClose,
+	} = useDisclosure();
+	const {
+		isOpen: isEditorOpen,
+		onOpen: onEditorOpen,
+		onClose: onEditorClose,
 	} = useDisclosure();
 
 	useEffect(() => {
@@ -316,6 +323,17 @@ export default function LogoDetailPage() {
 							<CardBody className="p-5 space-y-3">
 								<Button
 									className="w-full font-semibold"
+									color="secondary"
+									size="lg"
+									radius="lg"
+									variant="ghost"
+									startContent={<Pencil className="w-5 h-5" />}
+									onPress={onEditorOpen}
+								>
+									Edit Logo
+								</Button>
+								<Button
+									className="w-full font-semibold"
 									color="primary"
 									size="lg"
 									radius="lg"
@@ -449,6 +467,31 @@ export default function LogoDetailPage() {
 				color="danger"
 				confirmText="Delete"
 			/>
+
+			{/* Logo Editor Modal */}
+			<Modal
+				isOpen={isEditorOpen}
+				onClose={onEditorClose}
+				size="3xl"
+				scrollBehavior="inside"
+			>
+				<ModalContent>
+					{(onClose) => (
+						<>
+							<ModalHeader className="flex flex-col gap-1">
+								Edit {logo.name}
+							</ModalHeader>
+							<ModalBody>
+								<LogoEditor
+									imageUrl={transparentUrl || logo.imageUrl}
+									logoName={logo.name}
+									onClose={onClose}
+								/>
+							</ModalBody>
+						</>
+					)}
+				</ModalContent>
+			</Modal>
 		</div>
 	);
 }

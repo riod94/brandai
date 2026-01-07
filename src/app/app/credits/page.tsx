@@ -63,6 +63,7 @@ interface Transaction {
 	createdAt: string;
 	paymentMethodId?: string;
 	paymentMethod?: PaymentMethod | null;
+	snapToken?: string;
 }
 
 interface UserCredits {
@@ -124,15 +125,22 @@ function CreditsContent() {
 			.catch(console.error);
 
 		// Load Midtrans Snap script
+		const clientKey = process.env.NEXT_PUBLIC_MIDTRANS_CLIENT_KEY;
+		if (!clientKey) {
+			console.error("Midtrans Client Key is missing!");
+		}
+
+		console.log(
+			"Loading Midtrans Snap with key:",
+			clientKey ? "Present" : "Missing"
+		);
+
 		const script = document.createElement("script");
 		script.src =
 			process.env.NODE_ENV === "production"
 				? "https://app.midtrans.com/snap/snap.js"
 				: "https://app.sandbox.midtrans.com/snap/snap.js";
-		script.setAttribute(
-			"data-client-key",
-			process.env.NEXT_PUBLIC_MIDTRANS_CLIENT_KEY || ""
-		);
+		script.setAttribute("data-client-key", clientKey || "");
 		script.async = true;
 		document.body.appendChild(script);
 
@@ -260,6 +268,11 @@ function CreditsContent() {
 					},
 				});
 			} else {
+				if (!window.snap) {
+					alert(
+						"Payment system (Snap) failed to load. Please check your connection or AdBlocker."
+					);
+				}
 				setPaymentStatus("error");
 				onOpen();
 			}
@@ -302,6 +315,27 @@ function CreditsContent() {
 
 	// New Action Handler: Resume Payment
 	const handleResumePayment = (tx: Transaction) => {
+		// Checks for Snap Payment first (Gateway)
+		if (tx.snapToken && window.snap) {
+			window.snap.pay(tx.snapToken, {
+				onSuccess: () => {
+					fetchData();
+					setPaymentStatus("success");
+					onOpen();
+				},
+				onPending: () => {
+					setPaymentStatus("pending");
+					onOpen();
+					fetchData();
+				},
+				onError: () => {
+					setPaymentStatus("error");
+					onOpen();
+				},
+			});
+			return;
+		}
+
 		if (!tx.paymentMethod) return;
 
 		// Setup state to resume manual flow
@@ -314,8 +348,6 @@ function CreditsContent() {
 		});
 
 		// Need to make sure selectedMethodId matches so UI renders correct bank info
-		// But wait, the modal logic relies on 'selectedMethod' from 'selectedMethodId'.
-		// So I must set 'selectedMethodId' to the transaction's payment method.
 		setSelectedMethodId(tx.paymentMethod.id);
 
 		setProofUrl("");
@@ -675,23 +707,24 @@ function CreditsContent() {
 									<TableCell>
 										{tx.status === "pending" && (
 											<div className="flex items-center gap-2 justify-end">
-												{tx.paymentMethod &&
+												{((tx.paymentMethod &&
 													(tx.paymentMethod.type ===
 														"manual_bank" ||
-														tx.paymentMethod.type === "qris") && (
-														<Tooltip content="Resume Payment / Upload Proof">
-															<Button
-																size="sm"
-																color="primary"
-																variant="flat"
-																onPress={() =>
-																	handleResumePayment(tx)
-																}
-															>
-																Pay
-															</Button>
-														</Tooltip>
-													)}
+														tx.paymentMethod.type === "qris")) ||
+													tx.snapToken) && (
+													<Tooltip content="Resume Payment">
+														<Button
+															size="sm"
+															color="primary"
+															variant="flat"
+															onPress={() =>
+																handleResumePayment(tx)
+															}
+														>
+															Pay
+														</Button>
+													</Tooltip>
+												)}
 												<Tooltip content="Cancel and Create New">
 													<Button
 														size="sm"

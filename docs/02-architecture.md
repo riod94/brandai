@@ -17,6 +17,7 @@ BrandAI is a SaaS application built on the **Next.js** framework, designed to pr
 | **Payment Gateway**    | [Midtrans](https://midtrans.com/)             | Payment processing for Indonesian market.               |
 | **AI Inference**       | [Hugging Face](https://huggingface.co/)       | Access to image generation models.                      |
 | **Image Processing**   | Sharp, Potrace, @neplex/vectorizer            | Image manipulation and vectorization.                   |
+| **Canvas Editor**      | [Konva.js](https://konvajs.org/)              | (Planned) Client-side canvas for logo editing.          |
 
 ## High-Level Architecture
 

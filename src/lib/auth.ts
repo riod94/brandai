@@ -40,17 +40,6 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
                 const email = credentials.email as string;
                 const password = credentials.password as string;
 
-                // Password complexity check
-                const isStrongPassword =
-                    password.length >= 8 &&
-                    /[A-Z]/.test(password) &&
-                    /[a-z]/.test(password) &&
-                    /[0-9]/.test(password);
-
-                if (!isStrongPassword) {
-                    throw new Error("Password must be at least 8 characters long and contain uppercase, lowercase, and numbers");
-                }
-
                 const user = await db.query.users.findFirst({
                     where: eq(users.email, email),
                 });

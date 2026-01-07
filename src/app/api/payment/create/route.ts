@@ -79,6 +79,7 @@ export async function POST(request: Request) {
             credits: creditCount,
             plan: planId || "credit",
             status: "pending",
+            snapToken: midtransResponse.token,
         });
 
         return Response.json({

@@ -161,6 +161,7 @@ export const transactions = pgTable("transaction", {
     paymentId: text("payment_id"),
     paymentMethodId: text("payment_method_id"), // Optional reference to paymentMethods
     proofUrl: text("proof_url"), // For manual payments
+    snapToken: text("snap_token"), // For Midtrans Snap
     notes: text("notes"), // Admin notes or additional info
     plan: text("plan").notNull(),
     type: text("type").default("credit").notNull(), // credit | subscription | adjustment

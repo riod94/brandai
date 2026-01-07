@@ -14,6 +14,20 @@ export async function POST(request: Request) {
             );
         }
 
+        // Password complexity check
+        const isStrongPassword =
+            password.length >= 8 &&
+            /[A-Z]/.test(password) &&
+            /[a-z]/.test(password) &&
+            /[0-9]/.test(password);
+
+        if (!isStrongPassword) {
+            return Response.json(
+                { error: "Password must be at least 8 characters long and contain uppercase, lowercase, and numbers" },
+                { status: 400 }
+            );
+        }
+
         // Check if user already exists
         const existingUser = await db.query.users.findFirst({
             where: (users, { eq }) => eq(users.email, email),
