@@ -735,7 +735,7 @@ function CreditsContent() {
 															cancellingId === tx.orderId
 														}
 														onPress={() =>
-															handleCancelPayment(tx.orderId)
+															handleCancelPayment(tx)
 														}
 													>
 														<XCircle className="w-4 h-4" />

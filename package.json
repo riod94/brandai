@@ -36,6 +36,7 @@
     "@heroui/modal": "^2.2.26",
     "@heroui/navbar": "^2.2.9",
     "@heroui/popover": "^2.3.29",
+    "@heroui/radio": "^2.3.29",
     "@heroui/react-utils": "^2.1.14",
     "@heroui/scroll-shadow": "^2.3.19",
     "@heroui/select": "^2.4.30",

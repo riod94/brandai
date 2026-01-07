@@ -1,7 +1,8 @@
 import fs from 'fs';
 
-// Use require to ensure proper loading of the native binding
-import { vectorize, ColorMode, PathSimplifyMode, Hierarchical } from '@neplex/vectorizer';
+import { vectorize } from '@neplex/vectorizer';
+// Use require to access runtime enum objects, bypassing TypeScript's "ambient const enum" restriction
+const { ColorMode, PathSimplifyMode, Hierarchical } = require('@neplex/vectorizer');
 
 interface VectorizerOptions {
     colorMode?: "color" | "binary";
