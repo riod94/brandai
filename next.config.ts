@@ -1,7 +1,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  serverExternalPackages: ["@neplex/vectorizer", "sharp"],
+  serverExternalPackages: ["@neplex/vectorizer", "sharp", "onnxruntime-node", "@imgly/background-removal-node"],
   images: {
     remotePatterns: [
       {
