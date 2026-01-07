@@ -23,7 +23,7 @@ const nextConfig: NextConfig = {
     ],
   },
   outputFileTracingIncludes: {
-    "/api/remove-bg": ["./node_modules/onnxruntime-node/bin/napi-v3/linux/x64/**/*.node", "./node_modules/@imgly/background-removal-node/**/*"],
+    "/api/remove-bg": ["./node_modules/onnxruntime-node/bin/napi-v3/linux/x64/**/*.node", "./node_modules/onnxruntime-node/bin/napi-v3/linux/x64/**/*.so*", "./node_modules/@imgly/background-removal-node/**/*"],
   },
 };
 
