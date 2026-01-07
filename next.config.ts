@@ -22,6 +22,9 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  outputFileTracingIncludes: {
+    "/api/remove-bg": ["./node_modules/onnxruntime-node/**/*", "./node_modules/@imgly/background-removal-node/**/*"],
+  },
 };
 
 export default nextConfig;
